@@ -32,7 +32,7 @@ def _courses():
             notices=[
                 NoticePost(title="공지A", author="교수",
                            posted_at=datetime(2026, 4, 10, 9, 0),
-                           body="본문 한 줄\n두 번째 줄", url="http://x/n1"),
+                           body="", url="http://x/n1"),
             ],
         )
     ]
@@ -47,7 +47,7 @@ def test_markdown_has_all_sections():
     assert "## 4. 과목별 공지" in md
 
 
-def test_markdown_contains_items_and_body():
+def test_markdown_contains_items_and_notice_titles():
     md = render_summary_markdown(build_summary(_courses(), now=NOW))
     assert "W6 강의" in md
     assert "25:10" in md
@@ -55,8 +55,8 @@ def test_markdown_contains_items_and_body():
     assert "Q5" in md
     assert "설문" in md
     assert "공지A" in md
-    assert "본문 한 줄" in md
-    assert "두 번째 줄" in md
+    # body should not appear
+    assert "본문" not in md
 
 
 def test_markdown_days_left_formatted():

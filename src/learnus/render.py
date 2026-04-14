@@ -135,12 +135,7 @@ def render_summary_terminal(report: SummaryReport) -> None:
         _console.print(f"\n[bold cyan]{course_name}[/]")
         for p in posts:
             date_str = f"{p.posted_at:%Y-%m-%d}" if p.posted_at else "날짜 미상"
-            _console.print(f"  • [bold]{p.title}[/]  [dim]({p.author} · {date_str})[/]")
-            body = (p.body or "").strip()
-            if body:
-                for line in body.split("\n"):
-                    _console.print(f"      {line}")
-            _console.print()
+            _console.print(f"  • {p.title}  [dim]({p.author} · {date_str})[/]")
 
 
 def _format_video_line(item: VideoItem) -> str:

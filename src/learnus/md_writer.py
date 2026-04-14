@@ -42,15 +42,9 @@ def render_summary_markdown(report: SummaryReport) -> str:
             lines.append(f"### {course_name}")
             lines.append("")
             for p in posts:
-                lines.append(f"#### {p.title}")
                 date_str = f"{p.posted_at:%Y-%m-%d}" if p.posted_at else "날짜 미상"
-                lines.append(f"*{p.author} · {date_str}*")
-                lines.append("")
-                body = p.body.strip() if p.body else ""
-                lines.append(body or "_(본문 없음)_")
-                lines.append("")
-                lines.append("---")
-                lines.append("")
+                lines.append(f"- {p.title} *({p.author} · {date_str})*")
+            lines.append("")
     return "\n".join(lines)
 
 
