@@ -1,4 +1,3 @@
-import logging
 import sys
 import time
 
@@ -8,11 +7,11 @@ from learnus.auth import LEARNUS_BASE
 from learnus.models import Course
 from learnus.parsers.assignment import parse_assignments
 from learnus.parsers.course_list import parse_course_list
+from learnus.parsers.feedback import parse_feedbacks
 from learnus.parsers.material import parse_materials
 from learnus.parsers.notice import parse_notices
 from learnus.parsers.quiz import parse_quizzes
-
-log = logging.getLogger("learnus")
+from learnus.parsers.video import parse_videos
 
 RATE_LIMIT_SEC = 0.3
 
@@ -33,9 +32,11 @@ def fetch_all(session: requests.Session) -> list[Course]:
             continue
 
         course.assignments = _safe(parse_assignments, course.name, "과제", html, session)
-        course.notices = _safe(parse_notices, course.name, "공지", html, session)
-        course.materials = _safe_noarg(parse_materials, course.name, "자료", html)
-        course.quizzes = _safe_noarg(parse_quizzes, course.name, "퀴즈", html)
+        course.videos     = _safe_noarg(parse_videos,     course.name, "강의", html)
+        course.feedbacks  = _safe_noarg(parse_feedbacks,  course.name, "설문", html)
+        course.materials  = _safe_noarg(parse_materials,  course.name, "자료", html)
+        course.quizzes    = _safe(parse_quizzes,          course.name, "퀴즈", html, session)
+        course.notices    = _safe(parse_notices,          course.name, "공지", html, session)
 
         time.sleep(RATE_LIMIT_SEC)
     return courses

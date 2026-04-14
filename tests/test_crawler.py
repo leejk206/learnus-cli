@@ -10,20 +10,26 @@ def test_fetch_all_populates_courses_with_items():
     dashboard = (FIX / "dashboard.html").read_text(encoding="utf-8")
     course_page = (FIX / "course_page.html").read_text(encoding="utf-8")
     assignment_detail = (FIX / "assignment_detail.html").read_text(encoding="utf-8")
-    notice_detail = (FIX / "notice_detail.html").read_text(encoding="utf-8")
+    quiz_detail = (FIX / "quiz_detail.html").read_text(encoding="utf-8")
+    ubboard_list = (FIX / "ubboard_list.html").read_text(encoding="utf-8")
+    notice_post = (FIX / "notice_post.html").read_text(encoding="utf-8")
 
     session = MagicMock()
 
     def fake_get(url, *args, **kwargs):
         resp = MagicMock()
-        if "/" == url or url.endswith("ys.learnus.org/") or url.endswith("ys.learnus.org"):
+        if url.endswith("ys.learnus.org/") or url.endswith("ys.learnus.org"):
             resp.text = dashboard
         elif "/course/view.php" in url:
             resp.text = course_page
         elif "/mod/assign/view.php" in url:
             resp.text = assignment_detail
+        elif "/mod/quiz/view.php" in url:
+            resp.text = quiz_detail
         elif "/mod/ubboard/view.php" in url:
-            resp.text = notice_detail
+            resp.text = ubboard_list
+        elif "/mod/ubboard/article.php" in url:
+            resp.text = notice_post
         else:
             resp.text = "<html></html>"
         return resp
@@ -34,11 +40,12 @@ def test_fetch_all_populates_courses_with_items():
 
     assert len(courses) == 2
     first = courses[0]
-    assert first.name == "자료구조 (001)"
     assert len(first.assignments) == 2
-    assert len(first.notices) == 1
-    assert len(first.materials) == 2
+    assert len(first.videos) == 2
+    assert len(first.feedbacks) == 1
     assert len(first.quizzes) == 1
+    assert len(first.notices) == 2
+    assert len(first.materials) == 3  # 2 vods (counted as video kind) + 1 ubfile
 
 
 def test_fetch_all_continues_on_course_page_error():
@@ -56,7 +63,6 @@ def test_fetch_all_continues_on_course_page_error():
         return resp
 
     session.get.side_effect = fake_get
-
     courses = fetch_all(session)
     assert len(courses) == 2
     assert courses[0].assignments == []
