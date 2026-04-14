@@ -40,13 +40,15 @@ def _fetch_dates(session, url: str) -> tuple[datetime | None, datetime | None]:
     except Exception:
         return None, None
     soup = BeautifulSoup(resp.text, "lxml")
-    for box in soup.select("div.generalbox"):
-        text = box.get_text(" ", strip=True)
-        opens = _match(_OPEN_RE, text)
-        closes = _match(_CLOSE_RE, text)
-        if opens or closes:
-            return opens, closes
-    return None, None
+    for container_sel in ("div.quizinfo", "div.box.quizinfo", "div.generalbox", "div#region-main"):
+        for box in soup.select(container_sel):
+            text = box.get_text(" ", strip=True)
+            opens = _match(_OPEN_RE, text)
+            closes = _match(_CLOSE_RE, text)
+            if opens or closes:
+                return opens, closes
+    full_text = soup.get_text(" ", strip=True)
+    return _match(_OPEN_RE, full_text), _match(_CLOSE_RE, full_text)
 
 
 def _match(pattern: re.Pattern, text: str) -> datetime | None:
