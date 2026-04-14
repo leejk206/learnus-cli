@@ -8,7 +8,14 @@ from dotenv import load_dotenv
 
 from learnus.auth import LoginError, login
 from learnus.crawler import fetch_all
-from learnus.render import render_courses, render_json, render_upcoming
+from learnus.md_writer import render_summary_markdown
+from learnus.render import (
+    render_courses,
+    render_json,
+    render_summary_terminal,
+    render_upcoming,
+)
+from learnus.summary import build_summary
 
 app = typer.Typer(add_completion=False, help="LearnUs crawler CLI")
 
@@ -18,7 +25,8 @@ def main(
     upcoming: bool = typer.Option(False, "--upcoming", help="마감 예정 과제/퀴즈만 flat 출력"),
     course: str = typer.Option("", "--course", help="강좌명 부분일치 필터"),
     json_output: bool = typer.Option(False, "--json", help="JSON 덤프"),
-    debug: bool = typer.Option(False, "--debug", help="에러 시 traceback + HTML 덤프"),
+    summary: bool = typer.Option(False, "--summary", help="4섹션 요약 + MD 저장"),
+    debug: bool = typer.Option(False, "--debug", help="에러 시 traceback"),
 ) -> None:
     load_dotenv()
     user_id = os.getenv("YONSEI_ID", "")
@@ -42,8 +50,23 @@ def main(
         typer.echo(f"[ERROR] 크롤링 실패: {e}", err=True)
         if debug:
             traceback.print_exc()
-            _dump_debug_html("crawl_failure", "<no-html>")
         raise typer.Exit(code=1)
+
+    if summary:
+        now = datetime.now()
+        report = build_summary(courses, now)
+        render_summary_terminal(report)
+        md = render_summary_markdown(report)
+        out_dir = _reports_dir()
+        out_dir.mkdir(parents=True, exist_ok=True)
+        out_path = out_dir / f"{now:%Y%m%d}.md"
+        try:
+            out_path.write_text(md, encoding="utf-8")
+        except OSError as e:
+            typer.echo(f"[ERROR] MD 저장 실패: {e}", err=True)
+            raise typer.Exit(code=1)
+        typer.echo(f"[INFO] 저장됨: {out_path}", err=True)
+        return
 
     if course:
         courses = [c for c in courses if course in c.name]
@@ -56,10 +79,8 @@ def main(
         render_courses(courses)
 
 
-def _dump_debug_html(tag: str, html: str) -> None:
-    path = Path(f"/tmp/learnus-debug-{tag}-{datetime.now().strftime('%Y%m%d-%H%M%S')}.html")
-    path.write_text(html, encoding="utf-8")
-    typer.echo(f"[DEBUG] HTML dumped to {path}", err=True)
+def _reports_dir() -> Path:
+    return Path(__file__).resolve().parents[2] / "reports"
 
 
 if __name__ == "__main__":
