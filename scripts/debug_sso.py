@@ -9,7 +9,8 @@ from cryptography.hazmat.primitives.asymmetric.padding import PKCS1v15
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicNumbers
 from dotenv import load_dotenv
 
-load_dotenv("/home/student/projects/learnus-cli/.env")
+from pathlib import Path
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 uid = os.getenv("YONSEI_ID", "")
 pw = os.getenv("YONSEI_PW", "")
 
