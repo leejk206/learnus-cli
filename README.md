@@ -71,6 +71,42 @@ YONSEI_PW=your_password
 
 ## Usage
 
+### 0. 첫 실행 — 반드시 `--audit` 먼저
+
+처음 설치하고 사용할 때는 **반드시** 다음을 먼저 실행해야 합니다:
+
+```bash
+learnus --audit
+```
+
+파서가 내 과목의 모든 활동을 제대로 인식하는지 점검합니다. 출력 예:
+
+```
+──── 파서 커버리지 진단 (Audit) ────
+강좌 10개 분석 · 파서가 모르는 활동 타입 3종 발견
+
+데이터프라이버시 (CAS4108.01-00)(1학기)NEW
+  ✓ 처리됨: assign×2, ubboard×3, ubfile×17
+  ⚠ 미처리: laby×14
+
+인간의감정,감정의인간 (YCG1804.01-00)(1학기)NEW
+  ✓ 처리됨: assign×1, quiz×10, turnitintooltwo×2, ubboard×8, vod×35
+  ⚠ 미처리: folder×1, zoom×2
+
+── 처리되지 않는 활동 타입 전체 목록 ──
+  folder  (1개 강좌)
+  laby  (1개 강좌)
+  zoom  (1개 강좌)
+```
+
+- **`⚠ 미처리`** 에 뜨는 활동 타입은 요약에 나타나지 않습니다. 해당 항목이 중요한 과제/영상이라면 파서를 추가해야 합니다. (issue를 열어주세요)
+- **`! 참고`** 에 뜨는 항목은 파서는 인식했지만 날짜 등 일부 필드가 비어있는 경우입니다.
+- audit이 끝나면 `~/.cache/learnus/audit_v1.done` 마커가 생성되고, 이후 `learnus` / `learnus --summary` 등 다른 명령이 정상 동작합니다.
+
+**audit 없이 다른 명령을 실행하면** `[ERROR] 첫 실행입니다...` 메시지가 뜨면서 실행이 차단됩니다. 이건 "혹시 내 과목에서 놓치고 있는 항목이 있는지" 사용자가 인지한 후 도구를 쓰도록 하기 위한 장치입니다.
+
+**audit 재실행**: 학기가 바뀌거나 새 강좌를 추가했다면 `rm ~/.cache/learnus/audit_v1.done` 후 `learnus --audit` 를 다시 돌리세요.
+
 ### 1. 기본 실행 — 강좌별 상세 보기
 
 ```bash
@@ -137,11 +173,12 @@ learnus --upcoming
 
 강좌 경계 없이 마감일 순으로 과제·퀴즈만 flat list로 출력.
 
-### 4. 강좌 필터 / JSON / 디버그
+### 4. 강좌 필터 / JSON / audit / 디버그
 
 ```bash
 learnus --course "자료구조"       # 강좌명 부분 일치 필터
 learnus --json                   # 모든 데이터를 JSON으로 덤프 (파이프용)
+learnus --audit                  # 파서 커버리지 재점검
 learnus --debug                  # 에러 시 traceback 출력
 ```
 

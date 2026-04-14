@@ -8,6 +8,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 
+from learnus.audit import AuditReport, CourseAudit, aggregate_unhandled
 from learnus.models import Course
 from learnus.summary import SummaryReport, TaskItem, VideoItem  # noqa: F401
 
@@ -150,6 +151,69 @@ def _format_task_line_dday(item: TaskItem) -> str:
         f"{dday}  \\[{item.kind}]  {item.course_name}  | {item.title}  "
         f"마감 {item.due_at:%Y-%m-%d %H:%M}"
     )
+
+
+def render_audit_terminal(report: AuditReport) -> None:
+    _console.rule("[bold]파서 커버리지 진단 (Audit)")
+    total = len(report.courses)
+    total_unhandled = sum(len(c.unhandled_types) for c in report.courses)
+    _console.print(
+        f"강좌 {total}개 분석 · 파서가 모르는 활동 타입 "
+        f"{total_unhandled}종 발견\n"
+    )
+
+    for c in report.courses:
+        _render_course_audit(c)
+
+    unhandled_by_type = aggregate_unhandled(report)
+    if unhandled_by_type:
+        _console.rule("[bold]처리되지 않는 활동 타입 전체 목록")
+        for t, course_names in sorted(unhandled_by_type.items()):
+            _console.print(f"  [red]{t}[/]  ({len(course_names)}개 강좌)")
+            for n in course_names[:3]:
+                _console.print(f"    - {n}")
+        _console.print(
+            "\n[dim]위 타입이 포함된 항목은 요약에 나타나지 않습니다. "
+            "중요한 항목이면 이슈를 열거나 파서를 추가해주세요.[/]"
+        )
+    else:
+        _console.print(
+            "\n[green]모든 활동 타입이 파서에 의해 처리됩니다.[/]"
+        )
+
+
+def _render_course_audit(c: CourseAudit) -> None:
+    _console.print(f"[bold cyan]{c.name}[/]")
+    if c.handled_types:
+        handled_str = ", ".join(
+            f"{t}×{n}" for t, n in sorted(c.handled_types.items())
+        )
+        _console.print(f"  [green]✓ 처리됨:[/] {handled_str}")
+    else:
+        _console.print("  [dim]처리된 활동 없음[/]")
+
+    if c.unhandled_types:
+        unhandled_str = ", ".join(
+            f"{t}×{n}" for t, n in sorted(c.unhandled_types.items())
+        )
+        _console.print(f"  [red]⚠ 미처리:[/] {unhandled_str}")
+
+    warnings: list[str] = []
+    if c.assignments_missing_due:
+        warnings.append(f"과제 {c.assignments_missing_due}개 마감일 없음")
+    if c.quizzes_missing_deadline:
+        warnings.append(f"퀴즈 {c.quizzes_missing_deadline}개 기한 없음")
+    if c.feedbacks_missing_deadline:
+        warnings.append(f"설문 {c.feedbacks_missing_deadline}개 기한 없음")
+    if c.videos_missing_deadline:
+        warnings.append(f"영상 {c.videos_missing_deadline}개 기한 없음")
+    if c.notice_board_missing:
+        warnings.append(
+            "공지 게시판 미인식 (이름에 '공지' 또는 'announcement'가 없음)"
+        )
+    if warnings:
+        _console.print(f"  [yellow]! 참고:[/] " + " · ".join(warnings))
+    _console.print()
 
 
 def _format_dday_compact(days_left: int) -> str:
