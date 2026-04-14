@@ -8,11 +8,15 @@ from learnus.models import Assignment
 def parse_assignments(course_html: str, session) -> list[Assignment]:
     soup = BeautifulSoup(course_html, "lxml")
     results: list[Assignment] = []
+    seen_urls: set[str] = set()
     for li in soup.select("li.activity.assign"):
         link = li.select_one("div.activityinstance a")
         if not link:
             continue
-        url = link.get("href", "").strip()
+        url = (link.get("href") or "").strip()
+        if not url or url in seen_urls:
+            continue
+        seen_urls.add(url)
         name_span = link.select_one("span.instancename")
         if not name_span:
             continue
@@ -21,32 +25,57 @@ def parse_assignments(course_html: str, session) -> list[Assignment]:
             accesshide.extract()
         title = name_span.get_text(strip=True)
 
-        due_at, submitted = _fetch_detail(session, url)
-        results.append(Assignment(title=title, due_at=due_at, submitted=submitted, url=url))
+        submitted_from_course = _submitted_from_course_li(li)
+        due_at, submitted_from_detail = _fetch_detail(session, url)
+        submitted = (
+            submitted_from_course
+            if submitted_from_course is not None
+            else submitted_from_detail
+        )
+        results.append(
+            Assignment(title=title, due_at=due_at, submitted=submitted, url=url)
+        )
     return results
 
 
+def _submitted_from_course_li(li) -> bool | None:
+    img = li.select_one("span.autocompletion img")
+    if not img:
+        return None
+    alt = img.get("alt", "") or img.get("title", "")
+    if "완료함" in alt:
+        return True
+    if "완료하지 못함" in alt or "완료하지" in alt:
+        return False
+    return None
+
+
 def _fetch_detail(session, url: str) -> tuple[datetime | None, bool]:
-    resp = session.get(url)
+    try:
+        resp = session.get(url, timeout=15)
+    except Exception:
+        return None, False
     soup = BeautifulSoup(resp.text, "lxml")
     due_at: datetime | None = None
     submitted = False
-    for row in soup.select("div.submissionstatustable table tr"):
-        th = row.find("th")
-        td = row.find("td")
-        if not th or not td:
+    for row in soup.select("table.generaltable tr"):
+        cells = row.find_all(["th", "td"])
+        if len(cells) < 2:
             continue
-        label = th.get_text(strip=True)
-        value = td.get_text(strip=True)
-        if "종료" in label:
-            due_at = _parse_datetime(value)
-        elif "제출" in label:
-            submitted = "완료" in value
+        label = cells[0].get_text(strip=True)
+        value = cells[1].get_text(strip=True)
+        if "종료" in label or "마감까지" not in label and "마감" in label:
+            parsed = _parse_datetime(value)
+            if parsed:
+                due_at = parsed
+        elif "제출 여부" in label:
+            submitted = "완료" in value or ("제출" in value and "안" not in value)
     return due_at, submitted
 
 
 def _parse_datetime(text: str) -> datetime | None:
-    for fmt in ("%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M:%S"):
+    text = text.strip()
+    for fmt in ("%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M:%S", "%Y/%m/%d %H:%M", "%Y.%m.%d %H:%M"):
         try:
             return datetime.strptime(text, fmt)
         except ValueError:

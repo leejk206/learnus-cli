@@ -1,4 +1,5 @@
 import json
+import sys
 from dataclasses import asdict
 from datetime import datetime
 from typing import Iterable
@@ -97,7 +98,8 @@ def render_upcoming(courses: Iterable[Course], now: datetime | None = None) -> N
 
 def render_json(courses: Iterable[Course]) -> None:
     payload = [asdict(c) for c in courses]
-    _console.print(json.dumps(payload, default=_json_default, ensure_ascii=False, indent=2))
+    sys.stdout.write(json.dumps(payload, default=_json_default, ensure_ascii=False, indent=2))
+    sys.stdout.write("\n")
 
 
 def _json_default(obj):
