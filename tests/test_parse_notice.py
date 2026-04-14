@@ -46,3 +46,43 @@ def test_parse_notices_board_fetch_error_returns_empty():
     session = MagicMock()
     session.get.side_effect = RuntimeError("down")
     assert parse_notices(course_html, session) == []
+
+
+def test_parse_notices_matches_english_announcement_board():
+    # course page has three ubboard activities: Class Announcements, Class Q&A, Class Files.
+    # Only the announcement board should be selected.
+    course_html = """<html><body><ul class='topics'><li class='section'>
+      <ul>
+        <li class='activity ubboard modtype_ubboard'>
+          <div class='activityinstance'><a href='http://x/announce'>
+            <span class='instancename'>Class Announcements<span class='accesshide'>Board</span></span>
+          </a></div>
+        </li>
+        <li class='activity ubboard modtype_ubboard'>
+          <div class='activityinstance'><a href='http://x/qa'>
+            <span class='instancename'>Class Q&A<span class='accesshide'>Board</span></span>
+          </a></div>
+        </li>
+        <li class='activity ubboard modtype_ubboard'>
+          <div class='activityinstance'><a href='http://x/files'>
+            <span class='instancename'>Class Files<span class='accesshide'>Board</span></span>
+          </a></div>
+        </li>
+      </ul>
+    </li></ul></body></html>"""
+    list_html = (FIX / "ubboard_list.html").read_text(encoding="utf-8")
+
+    session = MagicMock()
+    fetched = []
+
+    def fake_get(url, *args, **kwargs):
+        fetched.append(url)
+        resp = MagicMock()
+        resp.text = list_html
+        return resp
+
+    session.get.side_effect = fake_get
+    posts = parse_notices(course_html, session)
+    assert len(posts) == 2
+    # Only the announcement board was fetched, not Q&A or Files
+    assert fetched == ["http://x/announce"]

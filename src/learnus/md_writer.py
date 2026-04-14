@@ -67,6 +67,8 @@ def _video_lines(item: VideoItem) -> list[str]:
 
 
 def _task_line_with_dday(item: TaskItem) -> str:
+    if item.days_left is None or item.due_at is None:
+        return f"- **마감 미정** · [{item.kind}] {item.course_name} · {item.title}"
     dday = _format_dday(item.days_left)
     return (
         f"- **{dday}** · [{item.kind}] {item.course_name} · {item.title} · "

@@ -40,9 +40,18 @@ def _find_notice_board_url(course_html: str) -> str | None:
         if hide:
             hide.extract()
         title = name.get_text(strip=True)
-        if "공지" in title:
+        if _is_notice_board(title):
             return (link.get("href") or "").strip() or None
     return None
+
+
+def _is_notice_board(title: str) -> bool:
+    if "공지" in title:
+        return True
+    t = title.lower()
+    if "announcement" in t or "announce" in t:
+        return True
+    return False
 
 
 def _extract_post_rows(list_html: str) -> list[tuple[str, str, str, str]]:

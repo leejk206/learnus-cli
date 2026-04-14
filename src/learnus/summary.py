@@ -16,9 +16,9 @@ class TaskItem:
     course_name: str
     kind: str          # "과제" | "퀴즈" | "설문"
     title: str
-    due_at: datetime
+    due_at: datetime | None
     url: str
-    days_left: int
+    days_left: int | None
 
 
 @dataclass
@@ -50,7 +50,15 @@ def build_summary(courses: list[Course], now: datetime) -> SummaryReport:
 
     for c in courses:
         for a in c.assignments:
-            if a.submitted or a.due_at is None or a.due_at < now:
+            if a.submitted:
+                continue
+            if a.due_at is None:
+                report.pending_submissions.append(TaskItem(
+                    course_name=c.name, kind="과제", title=a.title,
+                    due_at=None, url=a.url, days_left=None,
+                ))
+                continue
+            if a.due_at < now:
                 continue
             report.pending_submissions.append(TaskItem(
                 course_name=c.name, kind="과제", title=a.title,
@@ -58,14 +66,25 @@ def build_summary(courses: list[Course], now: datetime) -> SummaryReport:
                 days_left=(a.due_at.date() - now.date()).days,
             ))
         for f in c.feedbacks:
-            if f.submitted or f.closes_at is None or f.closes_at < now:
+            if f.submitted:
+                continue
+            if f.closes_at is None:
+                report.pending_submissions.append(TaskItem(
+                    course_name=c.name, kind="설문", title=f.title,
+                    due_at=None, url=f.url, days_left=None,
+                ))
+                continue
+            if f.closes_at < now:
                 continue
             report.pending_submissions.append(TaskItem(
                 course_name=c.name, kind="설문", title=f.title,
                 due_at=f.closes_at, url=f.url,
                 days_left=(f.closes_at.date() - now.date()).days,
             ))
-    report.pending_submissions.sort(key=lambda x: x.due_at)
+    # Dated items first (by date asc), then undated at the end.
+    report.pending_submissions.sort(
+        key=lambda x: (x.due_at is None, x.due_at or datetime.max)
+    )
 
     for c in courses:
         for a in c.assignments:

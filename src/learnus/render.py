@@ -149,6 +149,8 @@ def _format_video_line(item: VideoItem) -> str:
 
 
 def _format_task_line_dday(item: TaskItem) -> str:
+    if item.days_left is None or item.due_at is None:
+        return f"마감 미정  \\[{item.kind}]  {item.course_name}  | {item.title}"
     dday = _format_dday_compact(item.days_left)
     return (
         f"{dday}  \\[{item.kind}]  {item.course_name}  | {item.title}  "

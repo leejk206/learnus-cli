@@ -101,6 +101,28 @@ def test_notices_by_course_sorted_latest_first():
     assert [p.title for p in posts] == ["공지B", "공지A"]
 
 
+def test_pending_submissions_includes_undated_assignment_at_end():
+    courses = [
+        Course(
+            id="1", name="보안", url="http://x",
+            assignments=[
+                Assignment(title="HW_dated", due_at=datetime(2026, 4, 20, 23, 59),
+                           submitted=False, url="http://x/1"),
+                Assignment(title="HW_undated", due_at=None,
+                           submitted=False, url="http://x/2"),
+                Assignment(title="HW_submitted_undated", due_at=None,
+                           submitted=True, url="http://x/3"),
+            ],
+        ),
+    ]
+    report = build_summary(courses, now=NOW)
+    titles = [i.title for i in report.pending_submissions]
+    assert titles == ["HW_dated", "HW_undated"]
+    undated = report.pending_submissions[1]
+    assert undated.due_at is None
+    assert undated.days_left is None
+
+
 def test_empty_courses_produces_empty_report():
     report = build_summary([], now=NOW)
     assert isinstance(report, SummaryReport)
