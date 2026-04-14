@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 
-from learnus.models import Assignment, Course, Notice
+from learnus.models import Assignment, Course, NoticePost
 from learnus.render import render_courses, render_upcoming, render_json
 
 
@@ -12,7 +12,8 @@ def _sample_courses():
             Assignment(title="HW3", due_at=datetime(2026, 4, 20, 23, 59), submitted=False, url="http://x/1"),
             Assignment(title="HW2", due_at=datetime(2026, 4, 10, 23, 59), submitted=True, url="http://x/2"),
         ],
-        notices=[Notice(title="중간고사 범위", posted_at=datetime(2026, 4, 10), url="http://x/3")],
+        notices=[NoticePost(title="중간고사 범위", author="홍길동",
+                            posted_at=datetime(2026, 4, 10), body="본문", url="http://x/3")],
     )
     c2 = Course(
         id="2", name="운영체제", url="http://y",
