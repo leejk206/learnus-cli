@@ -85,7 +85,20 @@ def login(user_id: str, password: str) -> requests.Session:
             timeout=15,
         )
 
-        _follow_autosubmit_forms(session, r_auth)
+        callback = BeautifulSoup(r_auth.text, "lxml").find("form", id="ssoLoginForm")
+        if callback is None:
+            raise LoginError("예상치 못한 응답: 콜백 ssoLoginForm 없음")
+        cb_action = callback.get("action")
+        cb_payload = {
+            inp.get("name"): inp.get("value", "")
+            for inp in callback.find_all("input")
+            if inp.get("name")
+        }
+        session.post(cb_action, data=cb_payload,
+                     headers={"Referer": r_auth.url}, timeout=15)
+
+        session.get(f"{LEARNUS_BASE}/passni/spLoginProcess.php",
+                    headers={"Referer": cb_action}, timeout=15)
 
         dashboard = session.get(LEARNUS_BASE + "/", timeout=15)
     except requests.RequestException as e:
@@ -103,42 +116,6 @@ def _rsa_encrypt(plaintext: str, modulus_hex: str, exponent_hex: str) -> str:
     pub = RSAPublicNumbers(e, n).public_key(default_backend())
     ct = pub.encrypt(plaintext.encode("utf-8"), PKCS1v15())
     return ct.hex()
-
-
-def _follow_autosubmit_forms(session: requests.Session, response: requests.Response,
-                              max_hops: int = 5) -> requests.Response:
-    current = response
-    for _ in range(max_hops):
-        text = current.text
-        soup = BeautifulSoup(text, "lxml")
-        form = soup.find("form")
-        if form is None:
-            return current
-        onload = (soup.body or {}).get("onload", "") if soup.body else ""
-        has_autosubmit = (
-            ".submit()" in text
-            and ("onload" in text.lower())
-            and form.get("action")
-        )
-        if not has_autosubmit:
-            return current
-        action = form.get("action")
-        if not action.startswith("http"):
-            from urllib.parse import urljoin
-            action = urljoin(current.url, action)
-        payload = {
-            inp.get("name"): inp.get("value", "")
-            for inp in form.find_all("input")
-            if inp.get("name")
-        }
-        method = (form.get("method") or "post").lower()
-        if method == "post":
-            current = session.post(action, data=payload,
-                                   headers={"Referer": current.url}, timeout=15)
-        else:
-            current = session.get(action, params=payload,
-                                  headers={"Referer": current.url}, timeout=15)
-    return current
 
 
 def _is_logged_in(html: str) -> bool:

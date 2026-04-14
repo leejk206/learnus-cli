@@ -2,20 +2,34 @@
 <html>
 <body>
 <div id="page-content">
-  <div class="coursebox" data-courseid="12345">
-    <div class="info">
-      <h3 class="coursename">
-        <a href="https://ys.learnus.org/course/view.php?id=12345">자료구조 (001)</a>
-      </h3>
-    </div>
-  </div>
-  <div class="coursebox" data-courseid="67890">
-    <div class="info">
-      <h3 class="coursename">
-        <a href="https://ys.learnus.org/course/view.php?id=67890">운영체제 (002)</a>
-      </h3>
-    </div>
-  </div>
+  <ul class="course-list">
+    <li class="course-label-ir">
+      <div class="course-box">
+        <a class="course-link" href="https://ys.learnus.org/course/view.php?id=12345">
+          <div class="course-name">
+            <div class="course-label"><div class="badge badge-course">교과</div></div>
+            <div class="course-title">
+              <h3>자료구조 (001)</h3>
+              <span class="prof">홍길동</span>
+            </div>
+          </div>
+        </a>
+      </div>
+    </li>
+    <li class="course-label-ir">
+      <div class="course-box">
+        <a class="course-link" href="https://ys.learnus.org/course/view.php?id=67890">
+          <div class="course-name">
+            <div class="course-label"><div class="badge badge-course">교과</div></div>
+            <div class="course-title">
+              <h3>운영체제 (002)</h3>
+              <span class="prof">김교수</span>
+            </div>
+          </div>
+        </a>
+      </div>
+    </li>
+  </ul>
 </div>
 <a href="/login/logout.php">로그아웃</a>
 </body>
