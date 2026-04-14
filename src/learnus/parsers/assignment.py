@@ -42,10 +42,10 @@ def _submitted_from_course_li(li) -> bool | None:
     img = li.select_one("span.autocompletion img")
     if not img:
         return None
-    alt = img.get("alt", "") or img.get("title", "")
-    if "완료함" in alt:
+    alt = (img.get("alt", "") or img.get("title", "")).strip()
+    if alt.startswith("완료함") or alt.startswith("Completed"):
         return True
-    if "완료하지 못함" in alt or "완료하지" in alt:
+    if alt.startswith("완료하지") or alt.startswith("Not completed"):
         return False
     return None
 
@@ -64,13 +64,30 @@ def _fetch_detail(session, url: str) -> tuple[datetime | None, bool]:
             continue
         label = cells[0].get_text(strip=True)
         value = cells[1].get_text(strip=True)
-        if "종료" in label or "마감까지" not in label and "마감" in label:
+        is_due_label = (
+            "종료" in label
+            or ("마감" in label and "마감까지" not in label)
+            or "Due date" in label
+        )
+        is_submit_label = "제출 여부" in label or "Submission status" in label
+        if is_due_label:
             parsed = _parse_datetime(value)
             if parsed:
                 due_at = parsed
-        elif "제출 여부" in label:
-            submitted = "완료" in value or ("제출" in value and "안" not in value)
+        elif is_submit_label:
+            submitted = _is_submitted_value(value)
     return due_at, submitted
+
+
+def _is_submitted_value(value: str) -> bool:
+    v = value.strip()
+    if "완료" in v:
+        return True
+    if "Submitted for" in v:
+        return True
+    if v.startswith("Submitted") and not v.startswith("Submitted:"):
+        return True
+    return False
 
 
 def _parse_datetime(text: str) -> datetime | None:

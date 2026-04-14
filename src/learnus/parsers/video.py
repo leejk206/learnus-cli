@@ -52,13 +52,19 @@ def _extract_week(section) -> int | None:
     header = section.select_one("h3.sectionname")
     if not header:
         return None
-    m = re.search(r"(\d+)\s*주차", header.get_text(strip=True))
-    return int(m.group(1)) if m else None
+    text = header.get_text(strip=True)
+    m = re.search(r"(\d+)\s*주차", text)
+    if m:
+        return int(m.group(1))
+    m = re.search(r"Week\s*(\d+)", text, re.IGNORECASE)
+    if m:
+        return int(m.group(1))
+    return None
 
 
 def _watched_from_li(li) -> bool:
     img = li.select_one("span.autocompletion img")
     if not img:
         return False
-    alt = img.get("alt", "") or img.get("title", "")
-    return "완료함" in alt
+    alt = (img.get("alt", "") or img.get("title", "")).strip()
+    return alt.startswith("완료함") or alt.startswith("Completed")
