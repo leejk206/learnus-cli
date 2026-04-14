@@ -42,9 +42,9 @@ def test_markdown_has_all_sections():
     md = render_summary_markdown(build_summary(_courses(), now=NOW))
     assert "# LearnUs 요약" in md
     assert "## 1. 들어야 할 강의 영상" in md
-    assert "## 2. 제출해야 할 과제/설문" in md
-    assert "## 3. 앞으로의 시험/과제 일정" in md
-    assert "## 4. 과목별 공지" in md
+    assert "## 2. 제출해야 할 과제/설문/시험" in md
+    assert "## 3. 과목별 공지" in md
+    assert "앞으로의 시험/과제 일정" not in md
 
 
 def test_markdown_contains_items_and_notice_titles():
@@ -54,6 +54,7 @@ def test_markdown_contains_items_and_notice_titles():
     assert "HW3" in md
     assert "Q5" in md
     assert "설문" in md
+    assert "시험" in md            # quiz rendered as 시험 kind
     assert "공지A" in md
     # body should not appear
     assert "본문" not in md

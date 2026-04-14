@@ -9,7 +9,7 @@ from rich.panel import Panel
 from rich.text import Text
 
 from learnus.models import Course
-from learnus.summary import SummaryReport, TaskItem, VideoItem
+from learnus.summary import SummaryReport, TaskItem, VideoItem  # noqa: F401
 
 _console = Console()
 
@@ -116,19 +116,13 @@ def render_summary_terminal(report: SummaryReport) -> None:
     for item in report.videos_to_watch:
         _console.print(_format_video_line(item))
 
-    _console.rule("[bold]2. 제출해야 할 과제/설문 (남은 기한 순)")
+    _console.rule("[bold]2. 제출해야 할 과제/설문/시험 (남은 기한 순)")
     if not report.pending_submissions:
         _console.print("[dim](없음)[/]")
     for item in report.pending_submissions:
         _console.print(_format_task_line_dday(item))
 
-    _console.rule("[bold]3. 앞으로의 시험/과제 일정")
-    if not report.upcoming_schedule:
-        _console.print("[dim](없음)[/]")
-    for item in report.upcoming_schedule:
-        _console.print(_format_task_line_date(item))
-
-    _console.rule("[bold]4. 과목별 공지")
+    _console.rule("[bold]3. 과목별 공지")
     if not report.notices_by_course:
         _console.print("[dim](없음)[/]")
     for course_name, posts in report.notices_by_course.items():
@@ -155,12 +149,6 @@ def _format_task_line_dday(item: TaskItem) -> str:
     return (
         f"{dday}  \\[{item.kind}]  {item.course_name}  | {item.title}  "
         f"마감 {item.due_at:%Y-%m-%d %H:%M}"
-    )
-
-
-def _format_task_line_date(item: TaskItem) -> str:
-    return (
-        f"{item.due_at:%Y-%m-%d %H:%M}  \\[{item.kind}]  {item.course_name}  | {item.title}"
     )
 
 

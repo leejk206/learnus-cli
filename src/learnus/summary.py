@@ -14,7 +14,7 @@ class VideoItem:
 @dataclass
 class TaskItem:
     course_name: str
-    kind: str          # "과제" | "퀴즈" | "설문"
+    kind: str          # "과제" | "시험" | "설문"
     title: str
     due_at: datetime | None
     url: str
@@ -26,7 +26,6 @@ class SummaryReport:
     generated_at: datetime
     videos_to_watch: list[VideoItem] = field(default_factory=list)
     pending_submissions: list[TaskItem] = field(default_factory=list)
-    upcoming_schedule: list[TaskItem] = field(default_factory=list)
     notices_by_course: dict[str, list[NoticePost]] = field(default_factory=dict)
 
 
@@ -81,30 +80,19 @@ def build_summary(courses: list[Course], now: datetime) -> SummaryReport:
                 due_at=f.closes_at, url=f.url,
                 days_left=(f.closes_at.date() - now.date()).days,
             ))
-    # Dated items first (by date asc), then undated at the end.
-    report.pending_submissions.sort(
-        key=lambda x: (x.due_at is None, x.due_at or datetime.max)
-    )
-
-    for c in courses:
-        for a in c.assignments:
-            if a.due_at is None or a.due_at < now:
-                continue
-            report.upcoming_schedule.append(TaskItem(
-                course_name=c.name, kind="과제", title=a.title,
-                due_at=a.due_at, url=a.url,
-                days_left=(a.due_at.date() - now.date()).days,
-            ))
         for q in c.quizzes:
             due = q.closes_at or q.opens_at
             if due is None or due < now:
                 continue
-            report.upcoming_schedule.append(TaskItem(
-                course_name=c.name, kind="퀴즈", title=q.title,
+            report.pending_submissions.append(TaskItem(
+                course_name=c.name, kind="시험", title=q.title,
                 due_at=due, url=q.url,
                 days_left=(due.date() - now.date()).days,
             ))
-    report.upcoming_schedule.sort(key=lambda x: x.due_at)
+    # Dated items first (by date asc), then undated at the end.
+    report.pending_submissions.sort(
+        key=lambda x: (x.due_at is None, x.due_at or datetime.max)
+    )
 
     for c in courses:
         if not c.notices:

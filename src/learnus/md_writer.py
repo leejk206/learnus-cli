@@ -15,7 +15,7 @@ def render_summary_markdown(report: SummaryReport) -> str:
             lines.extend(_video_lines(item))
     lines.append("")
 
-    lines.append("## 2. 제출해야 할 과제/설문 (남은 기한 순)")
+    lines.append("## 2. 제출해야 할 과제/설문/시험 (남은 기한 순)")
     lines.append("")
     if not report.pending_submissions:
         lines.append("_없음_")
@@ -24,16 +24,7 @@ def render_summary_markdown(report: SummaryReport) -> str:
             lines.append(_task_line_with_dday(item))
     lines.append("")
 
-    lines.append("## 3. 앞으로의 시험/과제 일정")
-    lines.append("")
-    if not report.upcoming_schedule:
-        lines.append("_없음_")
-    else:
-        for item in report.upcoming_schedule:
-            lines.append(_task_line_with_date(item))
-    lines.append("")
-
-    lines.append("## 4. 과목별 공지")
+    lines.append("## 3. 과목별 공지")
     lines.append("")
     if not report.notices_by_course:
         lines.append("_없음_")
@@ -73,12 +64,6 @@ def _task_line_with_dday(item: TaskItem) -> str:
     return (
         f"- **{dday}** · [{item.kind}] {item.course_name} · {item.title} · "
         f"마감 {item.due_at:%Y-%m-%d %H:%M}"
-    )
-
-
-def _task_line_with_date(item: TaskItem) -> str:
-    return (
-        f"- **{item.due_at:%Y-%m-%d %H:%M}** · [{item.kind}] {item.course_name} · {item.title}"
     )
 
 

@@ -73,26 +73,25 @@ def test_videos_sorted_by_deadline():
     assert order == ["W6 강의", "W7 강의"]
 
 
-def test_pending_submissions_includes_assignment_and_feedback():
+def test_pending_submissions_includes_assignment_feedback_and_quiz():
     report = build_summary(_sample_courses(), now=NOW)
     kinds = [i.kind for i in report.pending_submissions]
     titles = [i.title for i in report.pending_submissions]
     assert "과제" in kinds
     assert "설문" in kinds
+    assert "시험" in kinds
     assert "HW3" in titles
     assert "중간 설문" in titles
-    assert "HW2" not in titles
-
-
-def test_upcoming_schedule_includes_quiz_and_future_assignments():
-    report = build_summary(_sample_courses(), now=NOW)
-    titles = [i.title for i in report.upcoming_schedule]
-    kinds = [i.kind for i in report.upcoming_schedule]
     assert "Q5" in titles
-    assert "HW3" in titles
-    assert "HW1" not in titles
-    assert "퀴즈" in kinds
-    assert "과제" in kinds
+    assert "HW2" not in titles       # submitted
+    assert "HW1" not in titles       # submitted + past
+
+
+def test_pending_submissions_sorted_by_due_date():
+    report = build_summary(_sample_courses(), now=NOW)
+    dated = [i for i in report.pending_submissions if i.due_at is not None]
+    due_times = [i.due_at for i in dated]
+    assert due_times == sorted(due_times)
 
 
 def test_notices_by_course_sorted_latest_first():
@@ -128,5 +127,4 @@ def test_empty_courses_produces_empty_report():
     assert isinstance(report, SummaryReport)
     assert report.videos_to_watch == []
     assert report.pending_submissions == []
-    assert report.upcoming_schedule == []
     assert report.notices_by_course == {}
