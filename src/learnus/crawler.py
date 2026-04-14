@@ -11,6 +11,7 @@ from learnus.parsers.feedback import parse_feedbacks
 from learnus.parsers.material import parse_materials
 from learnus.parsers.notice import parse_notices
 from learnus.parsers.quiz import parse_quizzes
+from learnus.parsers.turnitin import parse_turnitin_assignments
 from learnus.parsers.video import parse_videos
 
 RATE_LIMIT_SEC = 0.3
@@ -32,6 +33,9 @@ def fetch_all(session: requests.Session) -> list[Course]:
             continue
 
         course.assignments = _safe(parse_assignments, course.name, "과제", html, session)
+        course.assignments.extend(
+            _safe(parse_turnitin_assignments, course.name, "과제(표절검사)", html, session)
+        )
         course.videos     = _safe_noarg(parse_videos,     course.name, "강의", html)
         course.feedbacks  = _safe_noarg(parse_feedbacks,  course.name, "설문", html)
         course.materials  = _safe_noarg(parse_materials,  course.name, "자료", html)
